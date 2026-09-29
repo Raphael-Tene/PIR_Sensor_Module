@@ -10,10 +10,16 @@
 #define FAST_BLINK_HALF_MS 100U
 #define BEEP_ON_MS 200U
 #define BEEP_OFF_MS 200U
-#define PIR_PIN GPIO_PIN_5    // port C
-#define BUTTON_PIN GPIO_PIN_8 // port C
-#define BUZZER_PIN GPIO_PIN_6
+#define PIR_PIN GPIO_PIN_1      // port A
+#define BUTTON_PIN GPIO_PIN_8   // port C
+#define BUZZER_PIN GPIO_PIN_6   // port A
 #define ON_BOARD_LED GPIO_PIN_8 // port B
+static bool last_raw;           // what the pin read on the previous pass
+static bool stable;             // the debounced, trusted level
+static uint32_t changed_at;     // millis() when last_raw last changed
+static bool press_pending;      // a press waiting to be collected
+GPIO_InitTypeDef pir_config = {0};
+GPIO_InitTypeDef button_config = {0};
 
 typedef enum { OFF, SOLID, SLOW_BLINK, FAST_BLINK } indicator_patterns_t;
 typedef enum { BEEP_OFF, BEEP_ALARM } buzzer_patterns_t;
@@ -21,6 +27,7 @@ typedef enum {
   indicator_current_pattern,
   indicator_last_toggle
 } remember_indicator_state_t;
+
 typedef enum {
   buzzer_current_pattern,
   buzzer_last_change,
