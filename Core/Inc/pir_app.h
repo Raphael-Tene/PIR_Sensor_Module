@@ -1,8 +1,9 @@
 #ifndef __pir_app_H
+#define __pir_app_H
 
 #include "stm32f0xx_hal.h"
 #include <stdbool.h>
-#define __pir_app_H
+
 #define WARM_UP_TIME_MS 3000U
 #define DISARM_TIME_MS 3000U
 #define DEBOUNCE_TIME_MS 30U
@@ -10,46 +11,44 @@
 #define FAST_BLINK_HALF_MS 100U
 #define BEEP_ON_MS 200U
 #define BEEP_OFF_MS 200U
-#define PIR_PIN GPIO_PIN_1      // port A
-#define BUTTON_PIN GPIO_PIN_8   // port C
-#define BUZZER_PIN GPIO_PIN_6   // port A
-#define ON_BOARD_LED GPIO_PIN_8 // port B
-static bool last_raw;           // what the pin read on the previous pass
-static bool stable;             // the debounced, trusted level
-static uint32_t changed_at;     // millis() when last_raw last changed
-static bool press_pending;      // a press waiting to be collected
-GPIO_InitTypeDef pir_config = {0};
-GPIO_InitTypeDef button_config = {0};
+
+#define PIR_PORT GPIOA
+#define PIR_PIN GPIO_PIN_1
+#define BUTTON_PORT GPIOC
+#define BUTTON_PIN GPIO_PIN_8
+#define BUZZER_PORT GPIOA
+#define BUZZER_PIN GPIO_PIN_6
+#define INDICATOR_PORT GPIOB
+#define ON_BOARD_LED GPIO_PIN_8
 
 typedef enum { OFF, SOLID, SLOW_BLINK, FAST_BLINK } indicator_patterns_t;
 typedef enum { BEEP_OFF, BEEP_ALARM } buzzer_patterns_t;
-typedef enum {
-  indicator_current_pattern,
-  indicator_last_toggle
-} remember_indicator_state_t;
-
-typedef enum {
-  buzzer_current_pattern,
-  buzzer_last_change,
-  buzzer_is_on
-} remember_buzzer_state_t;
 typedef enum { WARMUP, ARMED, ALARM, DISARMED } app_state_t;
-typedef enum { state, entered_at } remember_app_state_t;
+
+/* PIR sensor: true while the sensor output is high. */
 void pir_init(void);
 bool pir_is_motion(void);
+
+/* Button: call button_update() every loop pass; button_was_pressed()
+ * returns true once per debounced press (reading it consumes it). */
 void button_init(void);
 void button_update(void);
 bool button_was_pressed(void);
+
+/* Status LED: indicator_set() changes pattern (no-op if unchanged),
+ * indicator_update() drives the blinking. */
 void indicator_init(void);
 void indicator_set(indicator_patterns_t indicator_pattern);
 void indicator_update(void);
+
+/* Active buzzer: buzzer_set() changes pattern (no-op if unchanged),
+ * buzzer_update() drives the beeping. */
 void buzzer_init(void);
 void buzzer_set(buzzer_patterns_t buzzer_pattern);
 void buzzer_update(void);
 
-void enter_app_state(app_state_t app_state);
-
+/* Alarm state machine: WARMUP -> ARMED -> ALARM -> DISARMED. */
 void app_init(void);
-void app_update(app_state_t app_state);
+void app_update(void);
 
 #endif
